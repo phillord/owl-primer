@@ -15,16 +15,13 @@
 ;; You should have received a copy of the GNU Lesser General Public License
 ;; along with this program. If not, see http://www.gnu.org/licenses/.
 
-(ns owl.primer.family-other
-  (:use [tawny.owl]))
+(ns owl.primer.core
+  (:require [tawny.owl]
+            [owl.primer family family-other])
+  (:gen-class))
 
-(defontology family-other
-  :iri "http://homepages.cs.ncl.ac.uk/phillip.lord/scratch/family-other.owl#")
-
-(defindividual JohnBrown)
-(defindividual MaryBrown)
-(defoproperty child)
-(defdproperty age)
-(defclass Grownup)
-
-(save-ontology "family-other.owl" :owl)
+;; Save the two ontologies when run
+(defn -main [& args]
+  (tawny.owl/save-ontology owl.primer.family/family "family.owl" :owl)
+  (tawny.owl/save-ontology
+   owl.primer.family-other/family-other "family-other.owl" :owl))
