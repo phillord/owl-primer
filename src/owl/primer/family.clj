@@ -41,7 +41,6 @@
 ;; development environment with a syntax is simple to use but which is, none
 ;; the less, full programmatic.
 
-
 ;; # Namespace Declaration
 ;;
 ;; This is a Clojure namespace declaration and has no effect on the external
@@ -433,9 +432,11 @@
   :equivalent (oneof Bill John Mary))
 
 ;; We define a teenage as having an age between 13 and 19. We could also have
-;; defined `teenAge` as a datatype and then used it here.
+;; defined `teenAge` as a datatype and then used it here. Instead of either
+;; min-max or the span syntax, here we have used the `><` syntax which is
+;; found in `tawny.english`.
 (defclass Teenager
-  :subclass (some hasAge (span >< 12 19)))
+  :subclass (some hasAge (>< 12 19)))
 
 (defclass Female)
 (defindividual Meg)
