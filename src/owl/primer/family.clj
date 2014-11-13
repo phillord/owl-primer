@@ -164,23 +164,30 @@
 ;; declared as disjoint -- that is, it is not possible to be a man and woman
 ;; at the same time. `Woman` is defined as a `Person` (`Man` will be in the
 ;; next expression).
+;;
+;; Note that in tawny syntax all of the slots (`:domain`, `:super` etc) are
+;; have the semantics "has". So `x :foo y` can be read `x` has `:foo y` or
+;; alternatively `y` is a `foo` of `x`. This differs from OWL Manchester
+;; Notation (omn) where `SubClassOf:` and `SubPropropertyOf:` have the inverse
+;; semantics. Hence `:super` and `SubClassOf:` are equivalent.
 (as-disjoint
- (defclass Man)
- (defclass Woman :subclass Person))
+ (defclass Man
+   :super
+   (annotate Person
+             (owl-comment "States that every man is a person")))
+ (defclass Woman
+   :super
+   (annotate Person
+             (owl-comment "States that every woman in a person"))))
 
 
-;; It is possible to add annotations to many different statements in OWL, and
-;; this does not necessarily fit naturally with Tawny syntax. So, specific
-;; support is not provided for adding annotation to the statement that `Man`
-;; is a subclass of `Person` (it *is* possible to add annotations to either
-;; `Man` or `Person`). Philosophically, however, tawny takes the stance of
-;; "embracing the platform": we have build on the OWL API, adding only
-;; dynamism, and an extensible syntax where it is convienient, but not
-;; adding syntactic wrappers for the sake of it. So, we add the statement that
-;; `Man` is a subclass of `Person` and add an annotation.
-(add-axiom
- (.getOWLSubClassOfAxiom (owl-data-factory)
-  Man Person #{(owl-comment "States that every man is a person")}))
+;; It is possible to add annotations to many different statements in OWL,
+;; including the statements of the relationship between individuals --
+;; or the axioms -- which are only present implicitly in Tawny-OWL syntax (in
+;; this case, the combination of the `:super` keyword and the `Person` super
+;; class). The `annotate` function is used to add this form of statement;
+;; here, we are not adding two comments to the `Person` class, but one comment
+;; to axiom saying that `Man is a Person`, and one that `Woman is a Person`.
 
 ;; Here we define our first two object properties -- relationships from one
 ;; individual to another. As with equivalence, we use `as-inverse` to avoid
@@ -213,7 +220,7 @@
 ;; wife. All ontologies represent a point-in-time, and domain of this property
 ;; is now factually incorrect in several jurisdictions.
 (defoproperty hasWife
-  :subproperty hasSpouse
+  :super hasSpouse
   :domain Man :range Woman)
 
 ;; We define `hasHusband`, with a `:functional` characteristic -- so an
@@ -242,7 +249,7 @@
 
 ;; These are straightforward, using semantics we have already used before.
 (defoproperty hasFather
-  :subproperty hasParent)
+  :super hasParent)
 
 (defoproperty hasBrother)
 
@@ -250,14 +257,19 @@
 ;; hasParent c` implies `a hasGrandparent c`. Likewise, for uncle. If we need
 ;; to specify more than one subpropertychain, they can be placed in vectors --
 ;;
-;;     (defoproperty r :subpropertychain [a b][c d])
+;;     (defoproperty r :subchain [a b][c d])
 ;;
-;; says that `r` has is the subproperty of `a`, `b` and `c`, `d`.
+;; which says the chain `a o b` and the chain `c o d` are both subproperties
+;; of `r`. It is also possible to mix vectors and plain arguments: so
+;;
+;;     (defoproperty r :subchain a b [c d])
+;;
+;; has the same meaning.
 (defoproperty hasGrandparent
-  :subpropertychain hasParent hasParent)
+  :subchain hasParent hasParent)
 
 (defoproperty hasUncle
-  :subpropertychain hasFather hasBrother)
+  :subchain hasFather hasBrother)
 
 ;; These are straightforward and use only semantics we have seen before
 (as-disjoint
@@ -282,7 +294,7 @@
 (as-disjoint
  (defclass YoungChild)
 
- (defclass Father :subclass
+ (defclass Father :super
    (owl-and Man Parent))
 
  (defclass Mother
@@ -302,7 +314,7 @@
 ;; of a property without actually having to name it.
 (defclass ChildlessPerson
   :equivalent (and Person (not Parent))
-  :subclass (and Person
+  :super (and Person
                  (not
                   (owl-some
                    (inverse hasParent)
@@ -310,7 +322,7 @@
 
 ;; All grandfathers are men who are parents.
 (defclass Grandfather
-  :subclass (and Man Parent))
+  :super (and Man Parent))
 
 ;; We could also have defined this with the tawny `some-only` which is
 ;; logically the same thing. We use `defclass` and `refine` as we need to
@@ -339,16 +351,13 @@
 
 ;; We define another individual and give two facts -- these state explicit
 ;; relationships between this individual and some other. In this case, we
-;; state that `Bill` does not have `Mary` as a wife, nor `Susan` as a
-;; daughter.
-;;
-;; The syntax of the :fact frame is somewhat unwieldy, and it is a candiate
-;; for later improvement, perhaps using vectors or maps and introducing a
-;; `:fact-not` frame.
+;; state that `Bill` neither has `Mary` as a wife nor `Susan` as a
+;; daughter. The `not` function is, as above, an alias for
+;; `tawny.owl/owl-not`.
 (defindividual Bill
   :fact
-  (fact-not hasWife Mary)
-  (fact-not hasDaughter Susan))
+  (not hasWife Mary)
+  (not hasDaughter Susan))
 
 ;; OWL2 supports "punning" where the same IRI is used to identify both a class
 ;; and an individual. This is useful both to fit with the RDF representatation
@@ -369,7 +378,7 @@
 ;; Jack is many things, but having children and being 53 are not two of them!
 (defindividual Jack
   :type Person (not Parent)
-  :fact (fact-not hasAge (literal 53)))
+  :fact (not hasAge (literal 53)))
 
 ;; Although this is one of the longest definitions, it brings nothing new that
 ;; we have no used before.
@@ -383,8 +392,8 @@
   other/JohnBrown
   :different Bill
   :fact
-  (fact hasWife Mary)
-  (fact hasAge 51))
+  (is hasWife Mary)
+  (is hasAge 51))
 
 ;; Has value allows us to assert a relationship between a class and an
 ;; individual. In this case we assert that `JohnsChildren` are those
@@ -436,7 +445,7 @@
 ;; min-max or the span syntax, here we have used the `><` syntax which is
 ;; found in `tawny.english`.
 (defclass Teenager
-  :subclass (some hasAge (>< 12 19)))
+  :super (some hasAge (>< 12 19)))
 
 (defclass Female)
 (defindividual Meg)
@@ -459,7 +468,6 @@
 (as-equivalent
  (defclass Adult)
  other/Grownup)
-
 
 ;; # Conclusions
 ;;
