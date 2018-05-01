@@ -460,7 +460,7 @@
 ;; first argument to `owl-class` however, not all of the frames can be applied
 ;; to a GCI, most notable, annotations which can only be added to the subclass
 ;; axiom (using the pattern shown previously for `Man` and `Person`).
-(add-subclass
+(gci
  (and Parent
       (at-most 1 hasChild)
       (only hasChild Female))
