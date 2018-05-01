@@ -90,7 +90,9 @@
 ;;    entity in Clojure space which, here, we block.
 (defontology family
   :iri "http://example.com/owl/families/"
-  :iri-gen #(iri (clojure.core/str "http://example.com/owl/families/" %))
+  :iri-gen (clojure.core/fn [_ name]
+             (iri (clojure.core/str
+                   "http://example.com/owl/families/" name)))
   :noname true)
 
 ;; The OWL Primer makes uses of a secondary ontology; we have defined that
